@@ -26,12 +26,13 @@
    in a master-slave setup. (n still unkown, tested with 1 master and 2 slaves) */
 
 #include <Arduino.h>
+#include <SoftwareSerial.h>
 
-#define THROUGH_HARDWARE_SERIAL_MAX_TIME 1000000 // Wait up to 1 second for an incoming byte
+#define THROUGH_HARDWARE_SERIAL_MAX_TIME 10000 // Wait up to 10 ms for an incoming byte
 
 class ThroughHardwareSerial {
   public:
-    HardwareSerial *serial;
+    Stream *serial = NULL;
 
     /* Pass the Serial port where you want to operate with */
 
@@ -39,11 +40,14 @@ class ThroughHardwareSerial {
       serial = serial_port;
     };
 
+    void set_serial(SoftwareSerial *serial_port) {
+      serial = serial_port;
+    };
 
     /* Returns the Serial object value i.e. if(Serial) */
 
     boolean can_start(uint8_t input_pin, uint8_t output_pin) {
-      return (serial != NULL) && *serial; // Check if pointer
+      return (serial != NULL); // Check if initialized
     };
 
 
