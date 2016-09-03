@@ -29,6 +29,7 @@
 #include <SoftwareSerial.h>
 
 #define THROUGH_HARDWARE_SERIAL_MAX_TIME 10000 // Wait up to 10 ms for an incoming byte
+#define THROUGH_HARDWARE_SERIAL_MIN_CHANNEL_SILELNCE_WINDOW 500 // min 0.5 ms silence to start sending
 
 class ThroughHardwareSerial {
   public:
@@ -47,6 +48,10 @@ class ThroughHardwareSerial {
     /* Returns the Serial object value i.e. if(Serial) */
 
     boolean can_start(uint8_t input_pin, uint8_t output_pin) {
+      if(serial->available() > 0) return false;    
+  
+      if (micros() - _last_busy_channel_ts < random(THROUGH_HARDWARE_SERIAL_MIN_CHANNEL_SILELNCE_WINDOW, 2 * THROUGH_HARDWARE_SERIAL_MIN_CHANNEL_SILELNCE_WINDOW) ) return false;
+
       return (serial != NULL); // Check if initialized
     };
 
@@ -64,8 +69,10 @@ class ThroughHardwareSerial {
     uint16_t receive_byte(uint8_t input_pin, uint8_t output_pin) {
       uint32_t time = micros();
       while(micros() - time < THROUGH_HARDWARE_SERIAL_MAX_TIME)
-        if(serial->available() > 0)
+        if(serial->available() > 0){
+          _last_busy_channel_ts = micros();
           return (uint8_t)serial->read();
+        };
       return FAIL;
     };
 
@@ -82,4 +89,7 @@ class ThroughHardwareSerial {
     void send_response(uint8_t response, uint8_t input_pin, uint8_t output_pin) {
       send_byte(response, input_pin, output_pin);
     };
+
+   private:
+     uint32_t     _last_busy_channel_ts;
 };
