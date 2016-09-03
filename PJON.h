@@ -1,7 +1,7 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ |
-   |!y°o:\      |  __| |__| | \| v4.2
+   |!y°o:\      |  __| |__| | \| v4.3
    |y"s§+`\     Giovanni Blu Mitolo 2012-2016
   /so+:-..`\    gioscarab@gmail.com
   |+/:ngr-*.`\
@@ -38,7 +38,6 @@ limitations under the License. */
 
   /* Protocol symbols */
   #define ACK         6
-  #define ACQUIRE_ID  63
   #define BUSY        666
   #define NAK         21
 
@@ -113,7 +112,7 @@ limitations under the License. */
     uint8_t  attempts;
     uint8_t  header;
     uint8_t  device_id;
-    char     *content;
+    char     content[PACKET_MAX_LENGTH];
     uint8_t  length;
     uint32_t registration;
     uint16_t state;
@@ -134,6 +133,34 @@ limitations under the License. */
 
   static void dummy_receiver_handler(uint8_t *payload, uint8_t length, const PacketInfo &packet_info) {};
   static void dummy_error_handler(uint8_t code, uint8_t data) {};
+
+
+  /* Check equality between two bus ids */
+
+  boolean bus_id_equality(const uint8_t *name_one, const uint8_t *name_two) {
+    for(uint8_t i = 0; i < 4; i++)
+      if(name_one[i] != name_two[i])
+        return false;
+    return true;
+  };
+
+
+  /* Copy a bus id: */
+
+  void copy_bus_id(uint8_t dest[], const uint8_t src[]) { memcpy(dest, src, 4); };
+
+
+  /* Compute CRC8 with a table-less implementation: */
+
+  uint8_t compute_crc_8(char input_byte, uint8_t crc) {
+    for (uint8_t i = 8; i; i--, input_byte >>= 1) {
+      uint8_t result = (crc ^ input_byte) & 0x01;
+      crc >>= 1;
+      if(result) crc ^= 0x8C;
+    }
+    return crc;
+  };
+
 
   template<typename Strategy = SoftwareBitBang>
   class PJON {
@@ -174,27 +201,6 @@ limitations under the License. */
       };
 
 
-      /* Look for a free id:
-         All ids are scanned looking for a free one. If no answer is received after
-         MAX_ATTEMPTS attempts, id is acquired and used as new id by the scanning device. */
-
-      void acquire_id() {
-        uint32_t time = micros();
-        uint8_t ping_id;
-        char msg = ACQUIRE_ID;
-
-        for(uint8_t id = 1; id < 255 && (uint32_t)(micros() - time) < MAX_ID_SCAN_TIME; id++) {
-          ping_id = send(id, &msg, 1);
-
-          while(packets[ping_id].state != 0 && (uint32_t)(micros() - time) < MAX_ID_SCAN_TIME)
-            update();
-
-          if(_device_id != NOT_ASSIGNED) return;
-        }
-        _error(ID_ACQUISITION_FAIL, FAIL);
-      };
-
-
       /* Initial random delay to avoid startup collision */
 
       void begin() {
@@ -203,36 +209,9 @@ limitations under the License. */
       };
 
 
-      /* Check equality between two bus ids */
-
-      boolean bus_id_equality(const uint8_t *name_one, const uint8_t *name_two) {
-        for(uint8_t i = 0; i < 4; i++)
-          if(name_one[i] != name_two[i])
-            return false;
-        return true;
-      };
-
-
-      /* Copy a bus id: */
-
-      void copy_bus_id(uint8_t dest[], const uint8_t src[]) const { memcpy(dest, src, 4); };
-
-
-      /* Compute CRC8 with a table-less implementation: */
-
-      uint8_t compute_crc_8(char input_byte, uint8_t crc) {
-        for (uint8_t i = 8; i; i--, input_byte >>= 1) {
-          uint8_t result = (crc ^ input_byte) & 0x01;
-          crc >>= 1;
-          if(result) crc ^= 0x8C;
-        }
-        return crc;
-      };
-
-
       /* Get the device id, returning a single byte (watch out to id collision): */
 
-      uint8_t device_id() {
+      uint8_t device_id() const {
         return _device_id;
       };
 
@@ -327,7 +306,6 @@ limitations under the License. */
       /* Remove a packet from the send list: */
 
       void remove(uint16_t id) {
-        free(packets[id].content);
         packets[id].attempts = 0;
         packets[id].device_id = 0;
         packets[id].length = 0;
@@ -352,13 +330,46 @@ limitations under the License. */
          Don't pass any parameter to count all packets
          Pass a device id to count all it's related packets */
 
-      uint8_t get_packets_count(uint8_t device_id = 0) {
+      uint8_t get_packets_count(uint8_t device_id = 0) const {
         uint8_t packets_count = 0;
         for(uint8_t i = 0; i < MAX_PACKETS; i++) {
           if(packets[i].state == 0) continue;
           if(!device_id || packets[i].device_id == device_id) packets_count++;
         }
         return packets_count;
+      };
+
+
+      /* Calculate the total message size when potentially including sender id and bus id */
+
+      uint8_t info_overhead() const {
+        return _shared ? (_sender_info ? 9 : 4) : (_sender_info ? 1 : 0);
+      }
+
+
+      /* Return the header byte based on current configuration */
+
+      uint8_t get_header_byte() const {
+        // Compose PJON 1 byte header from internal configuration
+        return (_shared ? MODE_BIT : 0) |
+               (_sender_info ? SENDER_INFO_BIT : 0) |
+               (_acknowledge ? ACK_REQUEST_BIT : 0);
+      }
+
+
+      /* The sender id and bus id for sender and reciver may be prefixed to the real message.
+         Compose the composite message. */
+
+      void compose_message(const uint8_t *b_id, char *str, const char *packet, uint8_t length) const {
+        if(_shared) {
+          copy_bus_id((uint8_t*) str, b_id);
+          if(_sender_info) {
+            copy_bus_id((uint8_t*) &str[4], bus_id);
+            str[8] = _device_id;
+          }
+        } else if(_sender_info) str[0] = _device_id;
+
+        memcpy(str + info_overhead(), packet, length);
       };
 
 
@@ -418,39 +429,17 @@ limitations under the License. */
 
 
       uint16_t dispatch(uint8_t id, uint8_t *b_id, const char *packet, uint8_t length, uint32_t timing, uint8_t header = 0) {
-        uint8_t new_length = _shared ? (length + (_sender_info ? 9 : 4)) : (length + (_sender_info ? 1 : 0));
-
-        // Compose PJON 1 byte header from internal configuration
-        header |= (_shared ? MODE_BIT : 0);
-        header |= (_sender_info ? SENDER_INFO_BIT : 0);
-        header |= (_acknowledge ? ACK_REQUEST_BIT : 0);
+        uint8_t new_length = length + info_overhead();
 
         if(new_length >= PACKET_MAX_LENGTH) {
           _error(CONTENT_TOO_LONG, new_length);
           return FAIL;
         }
 
-        char *str = (char *) malloc(new_length);
-
-        if(str == NULL) {
-          _error(MEMORY_FULL, 0);
-          return FAIL;
-        }
-
-        if(_shared) {
-          copy_bus_id((uint8_t*) str, b_id);
-          if(_sender_info) {
-            copy_bus_id((uint8_t*) &str[4], bus_id);
-            str[8] = _device_id;
-          }
-        } else if(_sender_info) str[0] = _device_id;
-
-        memcpy(str + (_shared ? (_sender_info ? 9 : 4) : (_sender_info ? 1 : 0)), packet, length);
-
-        for(uint8_t i = 0; i < MAX_PACKETS; i++)
+         for(uint8_t i = 0; i < MAX_PACKETS; i++)
           if(packets[i].state == 0) {
-            packets[i].header = header;
-            packets[i].content = str;
+            packets[i].header = (header & ~(MODE_BIT | SENDER_INFO_BIT | ACK_REQUEST_BIT)) | get_header_byte(); // Override native PJON bits
+            compose_message(b_id, packets[i].content, packet, length);
             packets[i].device_id = id;
             packets[i].length = new_length;
             packets[i].state = TO_BE_SENT;
@@ -552,7 +541,7 @@ limitations under the License. */
         strategy.send_byte(length + 4, _input_pin, _output_pin);
         CRC = compute_crc_8(length + 4, CRC);
 
-        // Transmit header header
+        // Transmit header byte
         strategy.send_byte(header, _input_pin, _output_pin);
         CRC = compute_crc_8(header, CRC);
 
@@ -718,6 +707,14 @@ limitations under the License. */
       };
 
 
+      /* In router mode, the receiver function can ack for selected receiver
+         device ids for which the route is known */
+
+      void send_acknowledge() {
+        strategy.send_response(ACK, _input_pin, _output_pin);
+      };
+
+
       /* Update the state of the send list:
          Check if there are packets to be sent or to be erased if correctly delivered.
          Returns the actual number of packets to be sent. */
@@ -749,12 +746,7 @@ limitations under the License. */
           if(packets[i].state == FAIL) {
             packets[i].attempts++;
             if(packets[i].attempts > MAX_ATTEMPTS) {
-              if(packets[i].content[0] == ACQUIRE_ID) {
-                _device_id = packets[i].device_id;
-                remove(i);
-                packets_count--;
-                continue;
-              } else _error(CONNECTION_LOST, packets[i].device_id);
+              _error(CONNECTION_LOST, packets[i].device_id);
               if(!packets[i].timing) {
                 if(_auto_delete) {
                   remove(i);
