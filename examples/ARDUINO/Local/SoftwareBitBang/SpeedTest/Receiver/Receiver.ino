@@ -1,7 +1,7 @@
 
-// Uncomment to run SoftwareBitBang to mode FAST
+// Uncomment to run SoftwareBitBang in MODE 2
 // #define SWBB_MODE 2
-// Uncomment to run SoftwareBitBang to mode OVERDRIVE
+// Uncomment to run SoftwareBitBang in MODE 3
 // #define SWBB_MODE 3
 
 /*  Acknowledge Latency maximum duration (1000 microseconds default).
@@ -55,19 +55,19 @@ void loop() {
   Serial.print("B - Total: ");
   Serial.print((unsigned int)((bus.packet_overhead(bus.last_packet_info.header) + 1) * test));
   Serial.println("B");
-  Serial.print("Absolute com speed: ");
+  Serial.print("Bandwidth: ");
   Serial.print(test * (20 + bus.packet_overhead(bus.last_packet_info.header) + 1));
   Serial.println("B/s");
-  Serial.print("Practical bandwidth: ");
+  Serial.print("Data throughput: ");
   Serial.print(test * 20);
   Serial.println("B/s");
   Serial.print("Packets sent: ");
   Serial.println(test);
-  Serial.print("Mistakes (error found with CRC) ");
+  Serial.print("Mistakes (error found with CRC): ");
   Serial.println(mistakes);
-  Serial.print("Fail (no answer from receiver) ");
+  Serial.print("Fail (no data found): ");
   Serial.println(fail);
-  Serial.print("Busy (Channel is busy or affected by interference) ");
+  Serial.print("Busy (Channel is busy or affected by interference): ");
   Serial.println(busy);
   Serial.print("Accuracy: ");
   Serial.print(100 - (100 / (test / mistakes)));

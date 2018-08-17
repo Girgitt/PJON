@@ -11,10 +11,13 @@ PJON<OverSampling> bus(bus_id, 45);
 
 void setup() {
   Serial.begin(115200);
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW); // Initialize LED 13 to be off
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW); // Initialize LED 13 to be off
 
-  bus.strategy.set_pins(11, 12);
+  /* When using more than one pin always use pins connected to
+     a different port group to avoid cross-talk. */
+  bus.strategy.set_pins(7, 12);
+
   /* A packet containing the id of every packet received will be sent back
      by this device to the packet's sender to acknowledge packet reception.
      (With this setup you can avoid sending packet duplicates) */
@@ -32,7 +35,7 @@ void setup() {
      DO NOT FORGET THIS SKETCH TRANSMITTING ALL DAY LONG :) */
 }
 
-void error_handler(uint8_t code, uint8_t data) {
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
     Serial.print("Connection with device ID ");
     Serial.print(bus.packets[data].content[0], DEC);

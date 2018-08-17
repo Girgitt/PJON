@@ -17,21 +17,18 @@ uint8_t bus_id[] = {0, 0, 0, 1};
 // PJON object
 PJON<SoftwareBitBang> bus(bus_id, 45);
 
-int packet;
 char content[] = "012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789";
 
 void setup() {
   bus.strategy.set_pin(12);
-  bus.begin();
-
   bus.set_error(error_handler);
+  bus.begin();
+  bus.send(44, content, 300);
 
-  packet = bus.send(44, content, 300, bus.config | PJON_EXT_HEAD_BIT);
-  // Extend the header to 2 bytes, for simple feature testing
   Serial.begin(115200);
 }
 
-void error_handler(uint8_t code, uint8_t data) {
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
     Serial.print("Connection lost with device id ");
     Serial.println(bus.packets[data].content[0], DEC);
@@ -39,8 +36,6 @@ void error_handler(uint8_t code, uint8_t data) {
 }
 
 void loop() {
-  if(!bus.packets[packet].state)
-    packet = bus.send(44, content, 300, bus.config | PJON_EXT_HEAD_BIT);
-
-  bus.update();
+  if(!bus.update()) // If all packets are delivered, send another
+    bus.send(44, content, 300);
 };

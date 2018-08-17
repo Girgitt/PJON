@@ -1,7 +1,7 @@
 
-// Uncomment to run SoftwareBitBang to mode FAST
+// Uncomment to run SoftwareBitBang in MODE 2
 // #define SWBB_MODE 2
-// Uncomment to run SoftwareBitBang to mode OVERDRIVE
+// Uncomment to run SoftwareBitBang in MODE 3
 // #define SWBB_MODE 3
 
 /*  Acknowledge Latency maximum duration (1000 microseconds default).
@@ -16,21 +16,18 @@
 // <Strategy name> bus(selected device id)
 PJON<SoftwareBitBang> bus(45);
 
-int packet;
 char content[] = "01234567890123456789";
 
 void setup() {
   bus.strategy.set_pin(12);
-  bus.begin();
-
   bus.set_error(error_handler);
-
-  packet = bus.send(44, content, 20);
+  bus.begin();
+  bus.send(44, content, 20);
 
   Serial.begin(115200);
 }
 
-void error_handler(uint8_t code, uint8_t data) {
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST) {
     Serial.print("Connection lost with device id ");
     Serial.println(bus.packets[data].content[0], DEC);
@@ -38,8 +35,6 @@ void error_handler(uint8_t code, uint8_t data) {
 };
 
 void loop() {
-  if(!bus.packets[packet].state)
-    packet = bus.send(44, content, 20);
-
-  bus.update();
+  if(!bus.update()) // If all packets are delivered, send another
+    bus.send(44, content, 20);
 };

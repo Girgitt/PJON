@@ -6,12 +6,15 @@
 
 uint8_t bus_id[] = {0, 0, 0, 1};
 
+// 1 milliseconds maximum expected latency, higher if necessary
+uint32_t latency = 1000;
+
 // <Strategy name> bus(selected device id)
 PJON<SoftwareBitBang> bus(bus_id, 45);
 
 void setup() {
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW); // Initialize LED 13 to be off
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW); // Initialize LED 13 to be off
 
   bus.strategy.set_pin(12);
   /* A packet containing the id of every packet received will be sent back
@@ -24,5 +27,5 @@ void setup() {
 
 void loop() {
   bus.update();
-  bus.receive(1000);
+  bus.receive(latency);
 };

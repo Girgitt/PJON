@@ -7,14 +7,13 @@ uint8_t bus_id[] = {0, 0, 0, 1};
 // <Strategy name> bus(selected device id)
 PJON<ThroughSerial> bus(bus_id, 45);
 
-int latency = 1000;
-/* 1 millisecond maximum expected latency using short
-   wires for bare testing, higher if necessary */
+// 1 millisecond maximum expected latency using short wires, higher if necessary
+uint32_t latency = 1000;
 
 void setup() {
   // Initialize LED 13 to be off
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
 
   /* Initialize the Serial instance used for communication
      and pass it to PJON's ThroughSerial strategy */
@@ -33,9 +32,9 @@ void setup() {
   bus.send_repeatedly(44, "B", 1, 1500000);
 }
 
-void error_handler(uint8_t code, uint8_t data) {
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
   if(code == PJON_CONNECTION_LOST)
-    digitalWrite(13, HIGH); // Light up LED 13 if a packet transmission failed
+    digitalWrite(LED_BUILTIN, HIGH); // Light up LED 13 if a packet transmission failed
 }
 
 void loop() {
