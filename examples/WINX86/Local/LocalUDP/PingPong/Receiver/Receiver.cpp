@@ -1,7 +1,7 @@
-#define PJON_INCLUDE_LUDP
-#include <PJON.h>
 
-PJON<LocalUDP> bus(44);
+#include <PJONLocalUDP.h>
+
+PJONLocalUDP bus(44);
 
 uint32_t count = 0;
 

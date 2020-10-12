@@ -14,17 +14,17 @@
 #endif
 
 #define TS_RESPONSE_TIME_OUT 35000
-/* Maximum accepted timeframe between transmission and synchronous
-   acknowledgement. This timeframe is affected by latency and CRC computation.
-   Could be necessary to higher this value if devices are separated by long
-   physical distance and or if transmitting long packets. */
+/* Maximum accepted duration between transmission and acknowledgement.
+   May be necessary to set a higher value if devices are separated by a long
+   physical distance and or if long packets are transmitted. */
 
-#define PJON_INCLUDE_TS true // Include only ThroughSerial
-#include <PJON.h>
+
+ // Include only ThroughSerial
+#include <PJONThroughSerial.h>
 
 int main() {
   printf("PJON instantiation... \n");
-  PJON<ThroughSerial> bus(45);
+  PJONThroughSerial bus(45);
   uint32_t baud_rate = 9600;
   printf("Opening serial... \n");
   int s = serialOpen("/dev/ttyAMA0", baud_rate);

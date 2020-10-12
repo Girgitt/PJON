@@ -21,16 +21,23 @@
 #pragma once
 
 #ifdef HAS_ETHERNETUDP
-  #include <interfaces/ARDUINO/UDPHelper_ARDUINO.h>
+  #include "../../interfaces/ARDUINO/UDPHelper_ARDUINO.h"
 #else
-  #include <interfaces/LINUX/UDPHelper_POSIX.h>
+  #include "../../interfaces/LINUX/UDPHelper_POSIX.h"
 #endif
 
 #include <PJONDefines.h>
 
-#define LUDP_DEFAULT_PORT                 7100
-#define LUDP_RESPONSE_TIMEOUT  (uint32_t) 100000
-#define LUDP_MAGIC_HEADER      (uint32_t) 0x0DFAC3D0
+#define LUDP_DEFAULT_PORT                   7100
+#ifndef LUDP_RESPONSE_TIMEOUT
+  #define LUDP_RESPONSE_TIMEOUT  (uint32_t) 100000
+#endif
+#define LUDP_MAGIC_HEADER        (uint32_t) 0x0DFAC3D0
+
+// Recommended receive time for this strategy, in microseconds
+#ifndef LUDP_RECEIVE_TIME
+  #define LUDP_RECEIVE_TIME 0
+#endif
 
 class LocalUDP {
     bool _udp_initialized = false;
@@ -60,10 +67,10 @@ public:
     };
 
 
-    /* Begin method, to be called before transmission or reception:
+    /* Begin method, to be called on initialization:
        (returns always true) */
 
-    bool begin(uint8_t /*additional_randomness*/ = 0) { return check_udp(); };
+    bool begin(uint8_t /*did*/ = 0) { return check_udp(); };
 
 
     /* Check if the channel is free for transmission */
@@ -76,15 +83,20 @@ public:
     static uint8_t get_max_attempts() { return 10; };
 
 
+    /* Returns the recommended receive time for this strategy: */
+
+    static uint16_t get_receive_time() { return LUDP_RECEIVE_TIME; };
+
+
     /* Handle a collision (empty because handled on Ethernet level): */
 
     void handle_collision() { };
 
 
-    /* Receive a string: */
+    /* Receive a frame: */
 
-    uint16_t receive_string(uint8_t *string, uint16_t max_length) {
-      return udp.receive_string(string, max_length);
+    uint16_t receive_frame(uint8_t *data, uint16_t max_length) {
+      return udp.receive_frame(data, max_length);
     }
 
 
@@ -98,7 +110,7 @@ public:
       uint8_t result[6];
       uint16_t reply_length = 0;
       do {
-        reply_length = receive_string(result, sizeof result);
+        reply_length = receive_frame(result, sizeof result);
         // We expect 1, if packet is larger it is not our ACK.
         // When an ACK is received we know it is for us because an ACK
         // will never be broadcast but directed.
@@ -118,10 +130,10 @@ public:
     };
 
 
-    /* Send a string: */
+    /* Send a frame: */
 
-    void send_string(uint8_t *string, uint16_t length) {
-      udp.send_string(string, length);
+    void send_frame(uint8_t *data, uint16_t length) {
+      udp.send_frame(data, length);
     };
 
 

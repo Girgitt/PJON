@@ -1,7 +1,7 @@
 
-#define PJON_INCLUDE_TL
 
-#include <PJON.h>
+
+#include <PJONThroughLora.h>
 
 /* To use this example, please download the LoRa third party Library
    from https://github.com/sandeepmistry/arduino-LoRa/ */
@@ -11,11 +11,11 @@ float mistakes;
 int busy;
 int fail;
 
-// <Strategy name> bus(selected device id)
-PJON<ThroughLora> bus(45);
+
+PJONThroughLora bus(45);
 
 int packet;
-char content[] = "01234567890123456789";
+uint8_t content[] = "01234567890123456789";
 
 void setup() {
 	bus.set_communication_mode(PJON_SIMPLEX);
@@ -32,8 +32,6 @@ void setup() {
 }
 
 void loop() {
-	bus.update();
-
-	if (!bus.packets[packet].state)
+	if(!bus.update())
 		packet = bus.send(44, content, 20);
 };

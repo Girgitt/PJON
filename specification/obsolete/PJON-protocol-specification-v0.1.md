@@ -1,14 +1,9 @@
-- PJON (Padded Jittering Operative Network) Protocol specification: **[v0.1](/specification/PJON-protocol-specification-v0.1.md)** - [v0.2](/specification/PJON-protocol-specification-v0.2.md) - [v0.3](/specification/PJON-protocol-specification-v0.3.md) - [v1.0](/specification/PJON-protocol-specification-v1.0.md)
-- Acknowledge specification: [v0.1](/specification/PJON-protocol-acknowledge-specification-v0.1.md)
-- Dynamic addressing specification: [v0.1](/specification/PJON-dynamic-addressing-specification-v0.1.md)
-- PJDL (Padded Jittering Data Link) specification:
-[PJDL v1.0](/src/strategies/SoftwareBitBang/specification/PJDL-specification-v1.0.md) - [PJDLR v1.0](/src/strategies/OverSampling/specification/PJDLR-specification-v1.0.md)
 
 ```cpp
 /*
 Milan, Italy - 10/04/2010
 The PJON® protocol specification is an invention and intellectual property
-of Giovanni Blu Mitolo - Copyright 2010-2018 All rights reserved
+of Giovanni Blu Mitolo - Copyright 2010-2020 All rights reserved
 
 Related work: https://github.com/gioblu/PJON
 Compliant implementation versions: PJON 1.0-3.0-beta

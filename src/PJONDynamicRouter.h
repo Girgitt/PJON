@@ -1,9 +1,9 @@
 
  /*-O//\         __     __
    |-gfo\       |__| | |  | |\ | ®
-   |!y°o:\      |  __| |__| | \| v11.1
+   |!y°o:\      |  __| |__| | \| 12.1
    |y"s§+`\     multi-master, multi-media bus network protocol
-  /so+:-..`\    Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+  /so+:-..`\    Copyright 2010-2020 by Giovanni Blu Mitolo gioscarab@gmail.com
   |+/:ngr-*.`\
   |5/:%&-a3f.:;\
   \+//u/+g%{osv,,\
@@ -15,22 +15,14 @@
 
 PJONDynamicRouter has been contributed by Fred Larsen.
 
-It performs the same as PJONRouterExtended, but populates the routing table
+It performs the same as PJONRouter, but populates the routing table
 dynamically based on observed packets from remote buses.
-
-The PJON project is entirely financed by contributions of people like you and
-its resources are solely invested to cover the development and maintenance
-costs, consider to make donation:
-- Paypal:   https://www.paypal.me/PJON
-- Bitcoin:  1FupxAyDTuAMGz33PtwnhwBm4ppc7VLwpD
-- Ethereum: 0xf34AEAF3B149454522019781668F9a2d1762559b
-Thank you and happy tinkering!
  _____________________________________________________________________________
 
 This software is experimental and it is distributed "AS IS" without any
 warranty, use it at your own risk.
 
-Copyright 2010-2018 by Giovanni Blu Mitolo gioscarab@gmail.com
+Copyright 2010-2020 by Giovanni Blu Mitolo gioscarab@gmail.com
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -50,7 +42,7 @@ limitations under the License. */
   #define PJON_ROUTER_TABLE_SIZE 100
 #endif
 
-#include <PJONRouter.h>
+#include "PJONRouter.h"
 
 class PJONDynamicRouter : public PJONRouter {
 protected:
@@ -61,13 +53,13 @@ protected:
   ) {
     uint8_t start_search = 0;
     uint8_t found_bus = find_bus_with_id(
-      packet_info.sender_bus_id,
-      packet_info.sender_id,
+      packet_info.tx.bus_id,
+      packet_info.tx.id,
       start_search
     );
     // Not found among attached buses or in routing table. Add to table.
     if(found_bus == PJON_NOT_ASSIGNED)
-      add(packet_info.sender_bus_id, sender_bus);
+      add(packet_info.tx.bus_id, sender_bus);
   };
 
   virtual void dynamic_receiver_function(
@@ -85,8 +77,50 @@ public:
 
   PJONDynamicRouter(
     uint8_t bus_count,
-    PJONAny *buses[],
+    PJONAny * const buses[],
     uint8_t default_gateway = PJON_NOT_ASSIGNED
   ) : PJONRouter(bus_count, buses, default_gateway) { };
+};
 
+// Specialized class to simplify declaration when using 2 buses
+template<class A, class B>
+class PJONDynamicRouter2 : public PJONDynamicRouter {
+  StrategyLink<A> linkA;
+  StrategyLink<B> linkB;
+  PJONAny busA, busB;
+public:
+  PJONDynamicRouter2(uint8_t default_gateway = PJON_NOT_ASSIGNED) {
+    PJON<Any>* buses[2] = { &busA, &busB };
+    PJONSimpleSwitch<Any>::connect_buses(2, buses, default_gateway);    
+    busA.set_link(&linkA);
+    busB.set_link(&linkB);
+  };
+
+  PJONAny &get_bus(const uint8_t ix) { return ix == 0 ? busA : busB; }
+
+  A &get_strategy_0() { return linkA.strategy; }
+  B &get_strategy_1() { return linkB.strategy; }
+};
+
+// Specialized class to simplify declaration when using 3 buses
+template<class A, class B, class C>
+class PJONDynamicRouter3 : public PJONDynamicRouter {
+  StrategyLink<A> linkA;
+  StrategyLink<B> linkB;
+  StrategyLink<C> linkC;
+  PJONAny busA, busB, busC;
+public:
+  PJONDynamicRouter3(uint8_t default_gateway = PJON_NOT_ASSIGNED) {
+    PJON<Any> *buses[3] = { &busA, &busB, &busC };
+    PJONSimpleSwitch<Any>::connect_buses(3, buses, default_gateway);
+    busA.set_link(&linkA);
+    busB.set_link(&linkB);
+    busC.set_link(&linkC);
+  };
+
+  PJONAny &get_bus(const uint8_t ix) { return ix == 0 ? busA : (ix == 1 ? busB : busC); }
+  
+  A &get_strategy_0() { return linkA.strategy; }
+  B &get_strategy_1() { return linkB.strategy; }
+  C &get_strategy_2() { return linkC.strategy; }
 };

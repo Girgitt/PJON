@@ -1,4 +1,6 @@
-#include <PJON.h>
+
+// Include only SoftwareBitBang strategy
+#include <PJONSoftwareBitBang.h>
 
 /* In this example it is demonstrated how to connect an ESP8266 module and an
    Arduino compatible device exchanging the character "B" in both directions
@@ -16,8 +18,7 @@
    character "B" is received. The string "BLINK" is printed in the ESP866
    Serial monitor each time the character "B" is received. */
 
-// <Strategy name> bus(selected device id)
-PJON<SoftwareBitBang> bus(44);
+PJONSoftwareBitBang bus(44); // Use device id 44
 
 void setup() {
   Serial.begin(115200);
@@ -27,7 +28,7 @@ void setup() {
 
   bus.set_error(error_handler);
   bus.set_receiver(receiver_function);
-  bus.strategy.set_pin(5); // ESP8266 GPIO 5 or pin D1
+  bus.strategy.set_pin(D1); // ESP8266 GPIO 5 or pin D1
   bus.begin();
   bus.send(45, "B", 1);
 };

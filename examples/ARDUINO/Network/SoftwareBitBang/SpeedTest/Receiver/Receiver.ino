@@ -1,4 +1,11 @@
-#include <PJON.h>
+
+// Uncomment to use the mode you prefer (default SWBB_MODE 1)
+// #define SWBB_MODE 1 // 1.95kB/s - 15625Bd
+// #define SWBB_MODE 2 // 2.21kB/s - 17696Bd
+// #define SWBB_MODE 3 // 2.94kB/s - 23529Bd
+// #define SWBB_MODE 4 // 3.40kB/s - 27210Bd
+
+#include <PJONSoftwareBitBang.h>
 
 float test;
 float mistakes;
@@ -10,14 +17,7 @@ bool debug = false;
 uint8_t bus_id[] = {0, 0, 0, 1};
 
 // PJON object
-PJON<SoftwareBitBang> bus(bus_id, 44);
-
-void setup() {
-  bus.strategy.set_pin(12);
-  bus.begin();
-  bus.set_receiver(receiver_function);
-  Serial.begin(115200);
-};
+PJONSoftwareBitBang bus(bus_id, 44);
 
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   /* Make use of the payload before sending something, the buffer where payload points to is
@@ -28,32 +28,38 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     // If packet formatted for a shared medium
     if(packet_info.header & PJON_MODE_BIT) {
       Serial.print(" Receiver bus id: ");
-      Serial.print(packet_info.receiver_bus_id[0]);
-      Serial.print(packet_info.receiver_bus_id[1]);
-      Serial.print(packet_info.receiver_bus_id[2]);
-      Serial.print(packet_info.receiver_bus_id[3]);
+      Serial.print(packet_info.rx.bus_id[0]);
+      Serial.print(packet_info.rx.bus_id[1]);
+      Serial.print(packet_info.rx.bus_id[2]);
+      Serial.print(packet_info.rx.bus_id[3]);
       Serial.print(" Device id: ");
-      Serial.print(packet_info.receiver_id);
+      Serial.print(packet_info.rx.id);
       // If sender info is included
       if((packet_info.header & PJON_TX_INFO_BIT) != 0) {
         Serial.print(" Sender bus id: ");
-        Serial.print(packet_info.sender_bus_id[0]);
-        Serial.print(packet_info.sender_bus_id[1]);
-        Serial.print(packet_info.sender_bus_id[2]);
-        Serial.print(packet_info.sender_bus_id[3]);
+        Serial.print(packet_info.tx.bus_id[0]);
+        Serial.print(packet_info.tx.bus_id[1]);
+        Serial.print(packet_info.tx.bus_id[2]);
+        Serial.print(packet_info.tx.bus_id[3]);
         Serial.print(" device id: ");
-        Serial.print(packet_info.sender_id);\
+        Serial.print(packet_info.tx.id);\
       // If local format and sender info included
       } else if(packet_info.header & PJON_TX_INFO_BIT) {
         Serial.print(" Sender id: ");
-        Serial.print(packet_info.sender_id);
+        Serial.print(packet_info.tx.id);
       }
       Serial.print(" Length: ");
       Serial.println(length);
     }
   }
-}
+};
 
+void setup() {
+  bus.strategy.set_pin(12);
+  bus.begin();
+  bus.set_receiver(receiver_function);
+  Serial.begin(115200);
+};
 
 void loop() {
   Serial.println("Starting 1 second communication speed test...");

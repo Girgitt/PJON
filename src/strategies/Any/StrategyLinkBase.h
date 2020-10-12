@@ -4,7 +4,7 @@
    Proposed and developed by Fred Larsen
    ___________________________________________________________________________
 
-    Copyright 2010-2018 Giovanni Blu Mitolo gioscarab@gmail.com
+    Copyright 2010-2020 Giovanni Blu Mitolo gioscarab@gmail.com
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -28,9 +28,9 @@ public:
     virtual uint32_t back_off(uint8_t attempts) = 0;
 
 
-    /* Begin method, to be called before transmission or reception */
+    /* Begin method, to be called on initialization */
 
-    virtual bool begin(uint8_t additional_randomness = 0) = 0;
+    virtual bool begin(uint8_t did = 0) = 0;
 
 
     /* Check if the channel is free for transmission */
@@ -42,15 +42,18 @@ public:
 
     virtual uint8_t get_max_attempts() = 0;
 
+    /* Returns the recommended receive time for this strategy: */
+
+    virtual uint16_t get_receive_time() = 0;
 
     /* Handle a collision: */
 
     virtual void handle_collision() = 0;
 
 
-    /* Receive a string: */
+    /* Receive a frame: */
 
-    virtual uint16_t receive_string(uint8_t *string, uint16_t max_length) = 0;
+    virtual uint16_t receive_frame(uint8_t *data, uint16_t max_length) = 0;
 
 
     /* Receive byte response: */
@@ -63,7 +66,7 @@ public:
     virtual void send_response(uint8_t response) = 0;
 
 
-    /* Send a string: */
+    /* Send a frame: */
 
-    virtual void send_string(uint8_t *string, uint16_t length) = 0;
+    virtual void send_frame(uint8_t *data, uint16_t length) = 0;
 };

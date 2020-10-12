@@ -1,5 +1,6 @@
 
 /* PJON Linux Interface
+   13/04/2020 - callalilychen, Use termios2 for generic baudrate support
    ___________________________________________________________________________
 
     Copyright 2018 Fred Larsen
@@ -18,11 +19,23 @@
 
 #pragma once
 
-#ifdef LINUX
+#if defined(LINUX) || defined(ANDROID)
+
+  #include <stdio.h>
   #include <stdint.h>
   #include <inttypes.h>
   #include <stdlib.h>
+  #include <stdarg.h>
   #include <string.h>
+  #include <unistd.h>
+  #include <fcntl.h>
+  #include <sys/ioctl.h>
+  #include <sys/types.h>
+  #include <sys/stat.h>
+
+extern "C" {
+  extern int tcflush (int __fd, int __queue_selector);
+}
 
   #include <chrono>
   #include <thread>
@@ -36,43 +49,29 @@
   #define LSBFIRST 1
   #define MSBFIRST 2
 
-  auto start_ts = std::chrono::high_resolution_clock::now();
-  auto start_ts_ms = std::chrono::high_resolution_clock::now();
+  uint32_t micros();
 
-  uint32_t micros() {
-    auto elapsed_usec =
-      std::chrono::duration_cast<std::chrono::microseconds>(
-        std::chrono::high_resolution_clock::now() - start_ts
-      ).count();
+  uint32_t millis();
 
-    if(elapsed_usec >= UINT32_MAX) {
-      start_ts = std::chrono::high_resolution_clock::now();
-      return 0;
-    } else return elapsed_usec;
-  };
+  void delayMicroseconds(uint32_t delay_value);
 
-  uint32_t millis() {
-    return (uint32_t)
-      std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::high_resolution_clock::now() - start_ts_ms
-      ).count();
-  };
+  void delay(uint32_t delay_value_ms);
 
-  void delayMicroseconds(uint32_t delay_value) {
-    auto begin_ts = std::chrono::high_resolution_clock::now();
-    while(true) {
-      auto elapsed_usec =
-        std::chrono::duration_cast<std::chrono::microseconds>(
-          std::chrono::high_resolution_clock::now() - begin_ts
-        ).count();
-      if(elapsed_usec >= delay_value) break;
-      std::this_thread::sleep_for(std::chrono::microseconds(50));
-    }
-  };
+  /* Open serial port ----------------------------------------------------- */
 
-  void delay(uint32_t delay_value_ms) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(delay_value_ms));
-  }
+  int serialOpen(const char *device, const int baud);
+
+  /* Returns the number of bytes of data available to be read in the buffer */
+
+  int serialDataAvailable(const int fd);
+
+  /* Reads a character from the serial buffer ------------------------------- */
+
+  int serialGetCharacter(const int fd);
+
+  #ifndef PJON_LINUX_SEPARATE_DEFINITION
+    #include "PJON_LINUX_Interface.inl"
+  #endif
 
   /* Generic constants ---------------------------------------------------- */
 
@@ -116,6 +115,28 @@
 
   #ifndef PJON_RANDOM_SEED
     #define PJON_RANDOM_SEED srand
+  #endif
+
+  /* Serial --------------------------------------------------------------- */
+
+  #ifndef PJON_SERIAL_TYPE
+    #define PJON_SERIAL_TYPE int16_t
+  #endif
+
+  #ifndef PJON_SERIAL_AVAILABLE
+    #define PJON_SERIAL_AVAILABLE(S) serialDataAvailable(S)
+  #endif
+
+  #ifndef PJON_SERIAL_WRITE
+    #define PJON_SERIAL_WRITE(S, C) write(S, &C, 1)
+  #endif
+
+  #ifndef PJON_SERIAL_READ
+    #define PJON_SERIAL_READ(S) serialGetCharacter(S)
+  #endif
+
+  #ifndef PJON_SERIAL_FLUSH
+    #define PJON_SERIAL_FLUSH(S) tcflush(S, TCIOFLUSH)
   #endif
 
   /* Timing --------------------------------------------------------------- */

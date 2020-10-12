@@ -1,15 +1,10 @@
-#include <PJON.h>
-
-// Ethernet configuration for this device
-IPAddress gateway = { 192, 1, 1, 1 };
-IPAddress subnet = { 255, 255, 255, 0 };
-IPAddress local_ip = { 192, 1, 1, 151 };
+#include <PJONGlobalUDP.h>
 
 // Address of remote device
-uint8_t remote_ip[] = { 192, 1, 1, 150 };
+uint8_t remote_ip[] = { 192, 1, 1, 163 };
 
-// <Strategy name> bus(selected device id)
-PJON<GlobalUDP> bus(45);
+
+PJONGlobalUDP bus(45);
 
 const char* ssid     = "MyNetworkSSID";
 const char* password = "MyNetworkPassword";
@@ -24,7 +19,6 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
 void setup() {
   Serial.begin(115200);
   Serial.println("Transmitter started.");
-  WiFi.config(local_ip, gateway, subnet);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);

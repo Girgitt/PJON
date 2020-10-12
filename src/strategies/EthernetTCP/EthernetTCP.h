@@ -24,6 +24,11 @@
 #include "EthernetLink.h"
 #include <PJONDefines.h>
 
+// Recommended receive time for this strategy, in microseconds
+#ifndef ETCP_RECEIVE_TIME
+  #define ETCP_RECEIVE_TIME 0
+#endif
+
 class EthernetTCP {
   public:
     EthernetLink link;
@@ -78,10 +83,10 @@ class EthernetTCP {
     };
 
 
-    /* Begin method, to be called before transmission or reception:
+    /* Begin method, to be called on initialization:
        (returns always true) */
 
-    bool begin(uint8_t /*additional_randomness*/ = 0) {
+    bool begin(uint8_t /*did*/ = 0) {
       return true;
     };
 
@@ -91,7 +96,7 @@ class EthernetTCP {
     bool can_start() {
       return link.device_id() != 0;
     };
-
+    
 
     /* Returns the maximum number of attempts for each transmission: */
 
@@ -100,16 +105,23 @@ class EthernetTCP {
     };
 
 
+    /* Returns the recommended receive time for this strategy: */
+
+    static uint16_t get_receive_time() {
+      return ETCP_RECEIVE_TIME;
+    };
+
+
     /* Handle a collision (empty because handled on Ethernet level): */
 
     void handle_collision() { };
 
 
-    /* Receive a string: */
+    /* Receive a frame: */
 
-    uint16_t receive_string(uint8_t *string, uint16_t max_length) {
+    uint16_t receive_frame(uint8_t *data, uint16_t max_length) {
       // Register supplied buffer as target for EthernetLink callback function
-      incoming_packet_buf_ptr = string;
+      incoming_packet_buf_ptr = data;
       current_buffer_size = max_length;
       incoming_packet_size = 0;
 
@@ -138,11 +150,11 @@ class EthernetTCP {
     };
 
 
-    /* Send a string: */
+    /* Send a frame: */
 
-    void send_string(uint8_t *string, uint16_t length) {
+    void send_frame(uint8_t *data, uint16_t length) {
       if(length > 0)
         last_send_result =
-          link.send((uint8_t)string[0], (const char*)string, length);
+          link.send((uint8_t)data[0], (const uint8_t*)data, length);
     };
 };

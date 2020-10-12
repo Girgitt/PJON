@@ -1,12 +1,5 @@
 
-
-#define OS_PREAMBLE_PULSE_WIDTH 0
-/* Gain refresh time of SRX882 module is 100 milliseconds.
-   If only one pair of SRX and STX are used to connect 2 devices in SIMPLEX
-   mode, there is no need to refresh receiver's gain, being communication
-   mono-directional. */
-
-#include <PJON.h>
+#include <PJONOverSampling.h>
 
 float test;
 float mistakes;
@@ -14,8 +7,12 @@ int busy;
 int fail;
 
 
-// <Strategy name> bus(selected device id)
-PJON<OverSampling> bus(44);
+
+PJONOverSampling bus(44);
+
+void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
+ // Do nothing to avoid affecting speed analysis
+};
 
 void setup() {
   Serial.begin(115200);
@@ -27,10 +24,6 @@ void setup() {
   bus.set_receiver(receiver_function);
   bus.begin();
 };
-
-void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
- // Do nothing to avoid affecting speed analysis
-}
 
 void loop() {
   Serial.println("Starting 1 second communication speed test...");

@@ -1,28 +1,21 @@
 
-// Uncomment to run SoftwareBitBang in MODE 2
-// #define SWBB_MODE 2
-// Uncomment to run SoftwareBitBang in MODE 3
-// #define SWBB_MODE 3
+// Uncomment to use the mode you prefer (default SWBB_MODE 1)
+// #define SWBB_MODE 1 // 1.95kB/s - 15625Bd
+// #define SWBB_MODE 2 // 2.21kB/s - 17696Bd
+// #define SWBB_MODE 3 // 2.94kB/s - 23529Bd
+// #define SWBB_MODE 4 // 3.40kB/s - 27210Bd
 
-/*  Acknowledge Latency maximum duration (1000 microseconds default).
-    Can be necessary to higher SWBB_RESPONSE_TIMEOUT to leave enough time to
-    receiver to compute the CRC and to respond with a synchronous acknowledgement
-    SWBB_RESPONSE_TIMEOUT can be reduced to higher communication speed if
-    devices are near and able to compute CRC fast enough. */
-//#define SWBB_RESPONSE_TIMEOUT 1000
-
-#include <PJON.h>
+#include <PJONSoftwareBitBang.h>
 
 float test;
-float mistakes;
 int busy;
 int fail;
 
-// <Strategy name> bus(selected device id)
-PJON<SoftwareBitBang> bus(45);
+
+PJONSoftwareBitBang bus(45);
 
 int packet;
-char content[] = "01234567890123456789";
+uint8_t content[] = "01234567890123456789";
 
 void setup() {
   bus.strategy.set_pin(12);
@@ -44,8 +37,6 @@ void loop() {
     unsigned int response = bus.send_packet(44, content, 20);
     if(response == PJON_ACK)
       test++;
-    if(response == PJON_NAK)
-      mistakes++;
     if(response == PJON_BUSY)
       busy++;
     if(response == PJON_FAIL)
@@ -65,21 +56,18 @@ void loop() {
   Serial.println("B/s");
   Serial.print("Packets sent: ");
   Serial.println((unsigned int)test);
-  Serial.print("Mistakes (error found with CRC): ");
-  Serial.println((unsigned int)mistakes);
   Serial.print("Fail (no acknowledge from receiver): ");
   Serial.println(fail);
   Serial.print("Busy (Channel is busy or affected by interference): ");
   Serial.println(busy);
-  Serial.print("Accuracy: ");
-  Serial.print(100 - (100 / (test / mistakes)));
+  Serial.print("Delivery success rate: ");
+  Serial.print(100 - (100 / (test / fail)));
   Serial.println(" %");
   Serial.println("---------------------");
   // Avoid Serial interference during test flushing
   Serial.flush();
 
   test = 0;
-  mistakes = 0;
   busy = 0;
   fail = 0;
 };

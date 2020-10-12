@@ -21,9 +21,9 @@
   #define TL_INITIAL_DELAY      1000
 #endif
 
-/* Mamimum 32 microseconds random delay in case of collision */
+/* Maximum 32 microseconds random delay in case of collision */
 #ifndef TL_COLLISION_DELAY
-  #define TL_COLLISION_DELAY      32
+  #define TL_COLLISION_DELAY      64
 #endif
 
 /* Set 100 milliseconds as the maximum timeframe between transmission and
@@ -32,15 +32,25 @@
    Higher if necessary. */
 
 #ifndef TL_RESPONSE_TIME_OUT
-  #define TL_RESPONSE_TIME_OUT 100000UL
+  #define TL_RESPONSE_TIME_OUT 100000
 #endif
 
-/* Maximum transmission attempts */
+/* Maximum transmission attempts (re-transmission not supported) */
 #ifndef TL_MAX_ATTEMPTS
-  #define TL_MAX_ATTEMPTS         10
+  #define TL_MAX_ATTEMPTS           5
 #endif
 
-/* Back-off exponential degree */
+/* Back-off exponential degree (re-transmission not supported) */
 #ifndef TL_BACK_OFF_DEGREE
-  #define TL_BACK_OFF_DEGREE       3
+  #define TL_BACK_OFF_DEGREE        5
+#endif
+
+/* Response length (the response is composed by the last TL_RESPONSE_LENGTH
+   bytes of the packet received). By default should be relatively safe.
+   (Few false positives per millennia)
+   If you are ready to trade safety for bandwidth reduce it, consider that
+   setting TL_RESPONSE_LENGTH < 4 reduces reliability and leads to higher
+   chances of detecting a false positive. */
+#ifndef TL_RESPONSE_LENGTH
+  #define TL_RESPONSE_LENGTH       5
 #endif

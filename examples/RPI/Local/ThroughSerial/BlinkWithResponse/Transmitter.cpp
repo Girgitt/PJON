@@ -13,11 +13,11 @@
   #define RPI true
 #endif
 
-#define PJON_INCLUDE_TS true // Include only ThroughSerial
+ // Include only ThroughSerial
 
-#include <PJON.h>
+#include <PJONThroughSerial.h>
 
-PJON<ThroughSerial> bus(45);
+PJONThroughSerial bus(45);
 
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   /* Make use of the payload before sending something, the buffer where payload points to is
@@ -56,7 +56,7 @@ int main() {
   bus.strategy.set_baud_rate(baud_rate);
 
   printf("Bus initialization \n");
-  bus.set_synchronous_acknowledge(false);
+  bus.set_acknowledge(false);
   bus.set_receiver(receiver_function);
   bus.begin();
 

@@ -1,4 +1,4 @@
-#include <PJON.h>
+#include <PJONGlobalUDP.h>
 
 // Ethernet configuration for this device
 byte gateway[] = { 192, 1, 1, 1 };
@@ -9,33 +9,32 @@ uint8_t local_ip[] = { 192, 1, 1, 150 };
 // Address of remote device
 uint8_t remote_ip[] = { 192, 1, 1, 151 };
 
-// <Strategy name> bus(selected device id)
-PJON<GlobalUDP> bus(45);
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println("Transmitter started.");
-  Ethernet.begin(mac, local_ip, gateway, gateway, subnet);
-  bus.strategy.add_node(44, remote_ip, 16001); // Repeat for each remote device
-  bus.strategy.set_port(16000);
-
-  bus.set_receiver(receiver_function);
-  bus.begin();
-  bus.send_repeatedly(44, "P", 1, 20000); // Send P to device 44 repeatedly
-}
+PJONGlobalUDP bus(45);
 
 uint32_t cnt = 0;
 uint32_t start = millis();
 
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
-  if (payload[0] == 'P') cnt++;
-}
+  if(payload[0] == 'P') cnt++;
+};
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Transmitter started.");
+  Ethernet.begin(mac, local_ip, gateway, gateway, subnet);
+  bus.strategy.add_node(44, remote_ip); // Repeat for each remote device
+
+  bus.set_receiver(receiver_function);
+  bus.begin();
+  bus.send_repeatedly(44, "P", 1, 20000); // Send P to device 44 repeatedly
+};
 
 void loop() {
   bus.update();
   bus.receive();
 
-  if (millis() - start > 1000) {
+  if(millis() - start > 1000) {
     start = millis();
     Serial.print("PONG/s: "); Serial.println(cnt);
     cnt = 0;

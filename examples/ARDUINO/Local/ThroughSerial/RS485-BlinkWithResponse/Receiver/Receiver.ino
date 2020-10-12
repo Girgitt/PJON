@@ -1,7 +1,7 @@
-#include <PJON.h>
+#include <PJONThroughSerial.h>
 
-// <Strategy name> bus(selected device id)
-PJON<ThroughSerial> bus(44);
+
+PJONThroughSerial bus(44);
 
 void setup() {
   pinMode(13, OUTPUT);
@@ -12,7 +12,7 @@ void setup() {
   bus.strategy.set_serial(&Serial);
   bus.strategy.set_enable_RS485_pin(2);
   bus.set_receiver(receiver_function);
-  bus.set_synchronous_acknowledge(false);
+  bus.set_acknowledge(false);
   bus.begin();
 };
 

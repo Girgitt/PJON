@@ -1,4 +1,5 @@
-#include <PJON.h>
+#define PJON_INCLUDE_PORT
+#include <PJONSoftwareBitBang.h>
 
 int busy;
 bool debug = true;
@@ -10,18 +11,7 @@ float test;
 uint8_t bus_id[] = {0, 0, 0, 1};
 
 // PJON object
-PJON<SoftwareBitBang> bus(bus_id, 44);
-
-void setup() {
-  /* Include a custom port, pnly packet including port 8001
-     are received others are filtered out. */
-  bus.include_port(true, 8001);
-  bus.strategy.set_pin(12);
-  bus.set_receiver(receiver_function);
-  bus.begin();
-
-  Serial.begin(115200);
-};
+PJONSoftwareBitBang bus(bus_id, 44);
 
 void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info &packet_info) {
   /* Make use of the payload before sending something, the buffer where payload points to is
@@ -32,25 +22,25 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     // If packet formatted for a shared medium
     if(packet_info.header & PJON_MODE_BIT) {
       Serial.print(" Receiver bus id: ");
-      Serial.print(packet_info.receiver_bus_id[0]);
-      Serial.print(packet_info.receiver_bus_id[1]);
-      Serial.print(packet_info.receiver_bus_id[2]);
-      Serial.print(packet_info.receiver_bus_id[3]);
+      Serial.print(packet_info.rx.bus_id[0]);
+      Serial.print(packet_info.rx.bus_id[1]);
+      Serial.print(packet_info.rx.bus_id[2]);
+      Serial.print(packet_info.rx.bus_id[3]);
       Serial.print(" Receiver id: ");
-      Serial.print(packet_info.receiver_id);
+      Serial.print(packet_info.rx.id);
       // If sender info is included
       if(packet_info.header & PJON_TX_INFO_BIT) {
         Serial.print(" Sender bus id: ");
-        Serial.print(packet_info.sender_bus_id[0]);
-        Serial.print(packet_info.sender_bus_id[1]);
-        Serial.print(packet_info.sender_bus_id[2]);
-        Serial.print(packet_info.sender_bus_id[3]);
+        Serial.print(packet_info.tx.bus_id[0]);
+        Serial.print(packet_info.tx.bus_id[1]);
+        Serial.print(packet_info.tx.bus_id[2]);
+        Serial.print(packet_info.tx.bus_id[3]);
       }
     }
     // If sender device id is included
     if(packet_info.header & PJON_TX_INFO_BIT) {
       Serial.print(" Sender id: ");
-      Serial.print(packet_info.sender_id);
+      Serial.print(packet_info.tx.id);
     }
     // Payload Length
     Serial.print(" Length: ");
@@ -62,8 +52,18 @@ void receiver_function(uint8_t *payload, uint16_t length, const PJON_Packet_Info
     }
   }
   Serial.println();
-}
+};
 
+void setup() {
+  /* Include a custom port, only packet including port 8001
+     are received others are filtered out. */
+  bus.include_port(8001);
+  bus.strategy.set_pin(12);
+  bus.set_receiver(receiver_function);
+  bus.begin();
+
+  Serial.begin(115200);
+};
 
 void loop() {
   Serial.print("Starting 1 second communication speed test on port ");

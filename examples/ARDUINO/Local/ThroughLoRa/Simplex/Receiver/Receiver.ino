@@ -1,7 +1,7 @@
 
-#define PJON_INCLUDE_TL
 
-#include <PJON.h>
+
+#include <PJONThroughLora.h>
 
 /* To use this example, please download the LoRa third party Library
    from https://github.com/sandeepmistry/arduino-LoRa/ */
@@ -10,8 +10,8 @@ float mistakes;
 int busy;
 int fail;
 
-// <Strategy name> bus(selected device id)
-PJON<ThroughLora> bus(44);
+
+PJONThroughLora bus(44);
 
 void setup() {
 	// Obligatory to initialize Radio with correct frequency
@@ -37,13 +37,13 @@ void loop() {
 	unsigned int response = 0;
 	while (millis() - time < 1000) {
 		response = bus.receive();
-		if (response == PJON_ACK)
+		if(response == PJON_ACK)
 			test++;
-		if (response == PJON_NAK)
+		if(response == PJON_NAK)
 			mistakes++;
-		if (response == PJON_BUSY)
+		if(response == PJON_BUSY)
 			busy++;
-		if (response == PJON_FAIL)
+		if(response == PJON_FAIL)
 			fail++;
 	}
 

@@ -1,5 +1,5 @@
 
-#include <PJON.h>
+#include <PJONSoftwareBitBang.h>
 /* VOLTAGE TESTER DEVICE
    This is a basic example to show how PJON can be used practically.
    Lets print in the Serial monitor the voltage detected by the analog
@@ -9,9 +9,9 @@
    is printed transmitted data, exchange duration and transmission speed
    for easy benchmarking and nominal functionality assessment. */
 
-// <Strategy name> bus(selected device id)
-PJON<SoftwareBitBang> bus(45);
-unsigned long time;
+
+PJONSoftwareBitBang bus(45);
+uint32_t myTime;
 int packet;
 int voltage;
 
@@ -19,16 +19,18 @@ void setup() {
   bus.strategy.set_pin(12);
   bus.begin();
   Serial.begin(115200);
-  time = millis();
+  myTime = millis();
   Serial.print("PJON - Device id ");
   Serial.print(bus.device_id());
   Serial.println(" A0 pin voltage cyclical packet sending...");
+  // Avoid simultaneous transmission of Serial and SoftwareBitBang data
+  Serial.flush();
 }
 
 
 void loop() {
-  if(millis() - time > 2500) {
-    time = millis();
+  if(millis() - myTime > 2500) {
+    myTime = millis();
     voltage = (float)(5.0 / (1023.0 / analogRead(A0))) * 1000;
     Serial.print("Voltage: ");
     Serial.print(voltage, DEC);
@@ -37,7 +39,7 @@ void loop() {
     Serial.flush();
 
     /* Send a "V", break the int in two bytes */
-    char content[3] = {'V', voltage >> 8, voltage & 0xFF};
+    uint8_t content[3] = {'V', (uint8_t)(voltage >> 8), (uint8_t)(voltage & 0xFF)};
 
     unsigned long send_time = micros();
     /* Use a blocking version of send. */

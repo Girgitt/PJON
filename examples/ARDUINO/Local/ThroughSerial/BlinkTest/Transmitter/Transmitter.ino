@@ -1,7 +1,7 @@
-#include <PJON.h>
 
-// <Strategy name> bus(selected device id)
-PJON<ThroughSerial> bus(45);
+#include <PJONThroughSerial.h>
+
+PJONThroughSerial bus(45);
 
 void setup() {
   Serial.begin(9600);

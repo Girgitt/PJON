@@ -1,7 +1,7 @@
 
-#define PJON_INCLUDE_TL
 
-#include <PJON.h>
+
+#include <PJONThroughLora.h>
 
 /* To use this example, please download the LoRa third party Library
    from https://github.com/sandeepmistry/arduino-LoRa/ */
@@ -11,13 +11,28 @@ float mistakes;
 int busy;
 int fail;
 
-// <Strategy name> bus(selected device id)
-PJON<ThroughLora> bus(45);
+
+PJONThroughLora bus(45);
 
 int packet;
-char content[] = "01234567890123456789";
+uint8_t content[] = "01234567890123456789";
+
+void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
+	if(code == PJON_PACKETS_BUFFER_FULL) {
+		Serial.print("Packet buffer is full, has now a length of ");
+		Serial.println(bus.packets[data].content[0], DEC);
+		Serial.println("Possible wrong bus configuration!");
+		Serial.println("higher PJON_MAX_PACKETS if necessary.");
+	}
+	if(code == PJON_CONTENT_TOO_LONG) {
+		Serial.print("Content is too long, length: ");
+		Serial.println(data);
+	}
+};
 
 void setup() {
+	// Synchronous acknowledgement is not supported
+	bus.set_acknowledge(false);
 	// Obligatory to initialize Radio with correct frequency
 	bus.strategy.setFrequency(868100000UL);
 	// Optional
@@ -29,24 +44,6 @@ void setup() {
 	Serial.println("PJON - Network analysis");
 	Serial.println("Starting a 5 second communication test...");
 	Serial.println();
-}
-
-void error_handler(uint8_t code, uint16_t data, void *custom_pointer) {
-	if (code == PJON_CONNECTION_LOST) {
-		Serial.print("Connection with device ID ");
-		Serial.print(data);
-		Serial.println(" is lost.");
-	}
-	if (code == PJON_PACKETS_BUFFER_FULL) {
-		Serial.print("Packet buffer is full, has now a length of ");
-		Serial.println(bus.packets[data].content[0], DEC);
-		Serial.println("Possible wrong bus configuration!");
-		Serial.println("higher PJON_MAX_PACKETS if necessary.");
-	}
-	if (code == PJON_CONTENT_TOO_LONG) {
-		Serial.print("Content is too long, length: ");
-		Serial.println(data);
-	}
 };
 
 void loop() {

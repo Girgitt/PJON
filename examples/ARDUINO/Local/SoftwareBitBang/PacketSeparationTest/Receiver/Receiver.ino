@@ -6,12 +6,13 @@
    transmits a continuous random byte stream. If an incoming packet is detected
    a false positive occurred. */
 
-// Uncomment to run SoftwareBitBang in MODE 2
-// #define SWBB_MODE 2
-// Uncomment to run SoftwareBitBang in MODE 3
-// #define SWBB_MODE 3
+// Transmission speed modes (see Timing.h)
+// #define SWBB_MODE 1 // 1.95kB/s - 15625Bd
+// #define SWBB_MODE 2 // 2.21kB/s - 17696Bd
+// #define SWBB_MODE 3 // 2.94kB/s - 23529Bd
+// #define SWBB_MODE 4 // 3.40kB/s - 27210Bd
 
-#include <PJON.h>
+#include <PJONSoftwareBitBang.h>
 
 SoftwareBitBang swbb;
 uint32_t attempts =  100000; // Number of random string reception attempts
@@ -55,14 +56,16 @@ void loop() {
   Serial.println(" __________________________________________________ ");
   Serial.println("[0%                     50%                    100%]");
   Serial.print(" ");
+  Serial.flush();
   test = 0, fail = 0, percent = 0;
   time = millis();
   while(test < attempts) {
-    if(swbb.receive_string(data, PJON_PACKET_MAX_LENGTH) != PJON_FAIL)
+    if(swbb.receive_frame(data, PJON_PACKET_MAX_LENGTH) != PJON_FAIL)
       fail++;
     test++;
     if(!(test % (attempts / 50))) {
       Serial.print("-");
+      Serial.flush();
       percent++;
     }
   }

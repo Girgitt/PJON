@@ -1,24 +1,24 @@
 
-#define PJON_INCLUDE_TL
 
-#include <PJON.h>
+
+#include <PJONThroughLora.h>
 #include <ArduinoJson.h>
 
 /* To use this example, please download the LoRa third party Library
    from https://github.com/sandeepmistry/arduino-LoRa/
    and JSON library from https://github.com/bblanchon/ArduinoJson */
 
-PJON<ThroughLora> LoraPJON(44);
+PJONThroughLora LoraPJON(44);
 
 void setup() {
 	Serial.begin(115200);
 	Serial.println("LoRa Receiver");
-
+	// Synchronous acknowledgement is not supported
+  LoraPJON.set_acknowledge(false);
 	// Obligatory to initialize Radio with correct frequency
-	bus.strategy.setFrequency(868100000UL);
+	LoraPJON.strategy.setFrequency(868100000UL);
 	// Optional
-	bus.strategy.setSignalBandwidth(250E3);
-
+	LoraPJON.strategy.setSignalBandwidth(250E3);
 	LoraPJON.begin();
 	//LoraPJON.set_communication_mode(PJON_SIMPLEX); //Optional disable ACK
 	LoraPJON.set_receiver(receiver_function);

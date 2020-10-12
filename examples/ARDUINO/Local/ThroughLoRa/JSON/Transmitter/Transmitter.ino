@@ -1,8 +1,8 @@
 
-#define PJON_INCLUDE_TL
+
 
 #include <LoRa.h>
-#include <PJON.h>
+#include <PJONThroughLora.h>
 #include <ArduinoJson.h>
 
 /* To use this example, please download the LoRa third party Library
@@ -11,16 +11,17 @@
 
 #define EVENT_TIME	1000 //1 message every 1 second
 
-PJON<ThroughLora> LoraPJON(45);
+PJONThroughLora LoraPJON(45);
 
 void setup() {
 	Serial.begin(115200);
 	Serial.println("LoRa Transmitter");
-
+	// Synchronous acknowledgement is not supported
+  LoraPJON.set_acknowledge(false);
 	// Obligatory to initialize Radio with correct frequency
-	bus.strategy.setFrequency(868100000UL);
+	LoraPJON.strategy.setFrequency(868100000UL);
 	// Optional
-	bus.strategy.setSignalBandwidth(250E3);
+	LoraPJON.strategy.setSignalBandwidth(250E3);
 
 	LoraPJON.begin();
 }

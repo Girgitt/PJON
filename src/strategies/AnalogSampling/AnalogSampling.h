@@ -31,7 +31,7 @@
    necessary to tweak timing constants in Timing.h.
    ___________________________________________________________________________
 
-   Copyright 2010-2018 Giovanni Blu Mitolo gioscarab@gmail.com
+   Copyright 2010-2020 Giovanni Blu Mitolo gioscarab@gmail.com
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -87,6 +87,11 @@
 
 #include "Timing.h"
 
+// Recommended receive time for this strategy, in microseconds
+#ifndef AS_RECEIVE_TIME
+  #define AS_RECEIVE_TIME 1000
+#endif
+
 class AnalogSampling {
   public:
 
@@ -100,10 +105,10 @@ class AnalogSampling {
     };
 
 
-    /* Begin method, to be called before transmission or reception:
+    /* Begin method, to be called on initialization:
        (returns always true) */
 
-    bool begin(uint8_t additional_randomness = 0) {
+    bool begin(uint8_t did = 0) {
       #ifdef ARDUINO
         // Set ADC clock prescale
         #if AS_PRESCALE ==  8
@@ -120,7 +125,7 @@ class AnalogSampling {
           sbi(ADCSRA, ADPS0);
         #endif
       #endif
-      PJON_DELAY(PJON_RANDOM(AS_INITIAL_DELAY) + additional_randomness);
+      PJON_DELAY(PJON_RANDOM(AS_INITIAL_DELAY) + did);
       compute_analog_read_duration();
       _last_byte = receive_byte();
       return true;
@@ -132,11 +137,11 @@ class AnalogSampling {
     there is no active transmission */
 
     bool can_start() {
-      if(read_byte() != 0B00000000) return false;
-      PJON_DELAY_MICROSECONDS(AS_BIT_SPACER / 2);
-      if((uint16_t)PJON_ANALOG_READ(_input_pin) > threshold) return false;
-      PJON_DELAY_MICROSECONDS(AS_BIT_SPACER / 2);
-      if((uint16_t)PJON_ANALOG_READ(_input_pin) > threshold) return false;
+      uint32_t time = PJON_MICROS();
+      while(
+        (uint32_t)(PJON_MICROS() - time) <=
+        (AS_BIT_SPACER + (AS_BIT_WIDTH * 9))
+      ) if(receive_byte() != PJON_FAIL) return false;
       PJON_DELAY_MICROSECONDS(PJON_RANDOM(AS_COLLISION_DELAY));
       if((uint16_t)PJON_ANALOG_READ(_input_pin) > threshold) return false;
       return true;
@@ -156,6 +161,13 @@ class AnalogSampling {
 
     static uint8_t get_max_attempts() {
       return AS_MAX_ATTEMPTS;
+    };
+
+
+    /* Returns the recommended receive time for this strategy: */
+
+    static uint16_t get_receive_time() {
+      return AS_RECEIVE_TIME;
     };
 
 
@@ -255,9 +267,9 @@ class AnalogSampling {
     };
 
 
-    /* Receive a string: */
+    /* Receive a frame: */
 
-    uint16_t receive_string(uint8_t *string, uint16_t max_length) {
+    uint16_t receive_frame(uint8_t *data, uint16_t max_length) {
       uint16_t result;
       // No initial flag, byte-stuffing violation
       if(max_length == PJON_PACKET_MAX_LENGTH)
@@ -279,7 +291,7 @@ class AnalogSampling {
       // No end flag, byte-stuffing violation
       if(max_length == 1 && receive_byte() != AS_END)
         return AS_FAIL;
-      *string = result;
+      *data = result;
       return 1;
     };
 
@@ -325,21 +337,21 @@ class AnalogSampling {
     };
 
 
-    /* Send a string: */
+    /* Send a frame: */
 
-    void send_string(uint8_t *string, uint16_t length) {
+    void send_frame(uint8_t *data, uint16_t length) {
       PJON_IO_MODE(_output_pin, OUTPUT);
       // Add frame flag
       send_byte(AS_START);
       for(uint16_t b = 0; b < length; b++)
         if( // Byte-stuffing
-          (string[b] == AS_START) ||
-          (string[b] == AS_ESC) ||
-          (string[b] == AS_END)
+          (data[b] == AS_START) ||
+          (data[b] == AS_ESC) ||
+          (data[b] == AS_END)
         ) {
           send_byte(AS_ESC);
-          send_byte(string[b] ^ AS_ESC);
-        } else send_byte(string[b]);
+          send_byte(data[b] ^ AS_ESC);
+        } else send_byte(data[b]);
       send_byte(AS_END);
       PJON_IO_PULL_DOWN(_output_pin);
     };

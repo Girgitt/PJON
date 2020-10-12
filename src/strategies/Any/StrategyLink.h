@@ -4,7 +4,7 @@
    Proposed and developed by Fred Larsen
    ___________________________________________________________________________
 
-    Copyright 2010-2018 Giovanni Blu Mitolo gioscarab@gmail.com
+    Copyright 2010-2020 Giovanni Blu Mitolo gioscarab@gmail.com
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -32,10 +32,10 @@ public:
     }
 
 
-    /* Begin method, to be called before transmission or reception: */
+    /* Begin method, to be called on initialization: */
 
-    bool begin(uint8_t additional_randomness = 0) {
-      return strategy.begin(additional_randomness);
+    bool begin(uint8_t did = 0) {
+      return strategy.begin(did);
     }
 
 
@@ -49,15 +49,20 @@ public:
     uint8_t get_max_attempts() { return strategy.get_max_attempts(); }
 
 
+    /* Returns the recommended receive time for this strategy: */
+
+    uint16_t get_receive_time() { return strategy.get_receive_time(); }
+
+
     /* Handle a collision: */
 
     void handle_collision() { strategy.handle_collision(); };
 
 
-    /* Receive a string: */
+    /* Receive a frame: */
 
-    uint16_t receive_string(uint8_t *string, uint16_t max_length) {
-      return strategy.receive_string(string, max_length);
+    uint16_t receive_frame(uint8_t *data, uint16_t max_length) {
+      return strategy.receive_frame(data, max_length);
     }
 
 
@@ -71,9 +76,9 @@ public:
     void send_response(uint8_t response) { strategy.send_response(response); }
 
 
-    /* Send a string: */
+    /* Send a frame: */
 
-    void send_string(uint8_t *string, uint16_t length) {
-      strategy.send_string(string, length);
+    void send_frame(uint8_t *data, uint16_t length) {
+      strategy.send_frame(data, length);
     }
 };

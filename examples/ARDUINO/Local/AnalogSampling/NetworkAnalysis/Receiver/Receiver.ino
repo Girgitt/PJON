@@ -1,15 +1,12 @@
 
 /* Use a couple of visible light / IR / UV LEDs as wireless bidirectional transceivers
-   Connect LED + to A0
-   Connect LED - to GND
-   Place a 100KΩ-5MΩ pull down resistor between A0 and GND
-   Try different resistor values to find the optimal to maximize range
-   Higher resistance can higher the range but can also higher background noise.  */
+   To know how to wire up the circuit see the AnalogSampling README:
+   https://github.com/gioblu/PJON/tree/master/src/strategies/AnalogSampling */
 
-#include <PJON.h>
+#include <PJONAnalogSampling.h>
 
-// <Strategy name> bus(selected device id)
-PJON<AnalogSampling> bus(44);
+
+PJONAnalogSampling bus(44);
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
