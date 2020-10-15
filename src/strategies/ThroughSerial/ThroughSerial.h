@@ -110,7 +110,7 @@ class ThroughSerial {
             return _last_byte;
           }
         }
-        #if defined(_WIN32)
+        #if defined(_WIN32) || defined(LINUX) || defined(RPI)
           PJON_DELAY_MICROSECONDS(time_out / 10);
         #endif
       }
